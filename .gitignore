@@ -4,3 +4,6 @@ client/dist
 
 # ФАЙЛ КОНФИГУРАЦИИ
 .env
+certificate_ca.crt
+certificate.key
+certificate.crt
