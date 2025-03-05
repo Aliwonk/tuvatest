@@ -14,8 +14,17 @@ const payRoute = require("./src/routes/pay.route");
 const questionRoute = require("./src/routes/question.route");
 const testRoute = require("./src/routes/test.route");
 
+
+app.use(function (req, res, next) {
+    if (req.protocol === 'http') {
+        res.redirect(301, `https://${req.headers.host}${req.url}`);
+    } else {
+        next();
+    }
+});
+
 app.use(cors({
-    origin: "*",
+    origin: "http://localhost:8080",
 }));
 app.use(guard);
 
@@ -38,11 +47,19 @@ app.use("/test", testRoute);
 
 // HTTPS OPTIONS
 
+const HTTPS_OPTIONS = {
+    key: fs.readFileSync('certificate.key'),
+    cert: fs.readFileSync('certificate.crt'),
+    ca: fs.readFileSync('certificate_ca.crt')
+}
+
 postgresDB.sync({ alter: true }).then(result => {
-    app.listen(process.env.PORT, () => {
-        console.log(`СЕРВЕР РАБОТАЕТ НА ПОРТУ ${process.env.PORT}`);
-        console.log(`ДОСТУПЕН ПО АДРЕСУ http://${process.env.HOST}:${process.env.PORT}`);
-    });
+    https.createServer(HTTPS_OPTIONS, app)
+        .listen(process.env.PORT_SSL, () => {
+            console.log(`СЕРВЕР РАБОТАЕТ НА ПОРТУ ${process.env.PORT_SSL}`);
+            console.log(`ДОСТУПЕН ПО АДРЕСУ https://tuvatest.ru`);
+        });
+
 })
     .catch(err => {
         console.log("Ошибка подключения к базе данных: " + err);
