@@ -1,4 +1,4 @@
-const URL_SERVER = "http://localhost:8080";
+const URL_SERVER = "https://tuvatest.ru";
 const API_SERVER = {
     AUTH: {
         LOGIN: `${URL_SERVER}/auth/login`,
