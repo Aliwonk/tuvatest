@@ -19,15 +19,45 @@
             v-if="result.question.type == 'ONE_TO_ONE'"
             v-for="option in result.question.options"
           >
-            <label>{{ option.text }} {{ option.correct }}</label>
+            <label>{{ option.text }} {{ option.correct ? "+" : "" }}</label>
           </div>
         </div>
       </div>
-      <button id="btn-restart" @click="() => reloadPage()">Заново</button>
+      <div class="test-buttons">
+        <button id="btn-restart" @click="() => reloadPage()">Заново</button>
+      </div>
     </div>
     <div v-else>
       <div v-if="questions.length > 0" class="test">
-        <div
+        <div class="questions">
+          <div class="question-text">
+            <p style="margin-right: 5px">{{ countQuestion + 1 }}.</p>
+            <span>
+              {{ question.text }}
+            </span>
+            <span style="margin-left: 5px"
+              >Вес: {{ question.rating }} Сложность:
+              {{ question.difficulty }}</span
+            >
+          </div>
+          <div
+            class="options"
+            v-if="question.type == 'ONE_TO_ONE'"
+            v-for="option in question.options"
+            :key="option.id"
+          >
+            <input
+              type="radio"
+              :name="question.id"
+              :id="option.id"
+              @change="addOption(question.id, option.id)"
+            />
+            <label :for="option.id" @click="addOption(question.id, option.id)"
+              >{{ option.text }} {{ option.correct }}</label
+            >
+          </div>
+        </div>
+        <!-- <div
           class="questions"
           v-for="(question, index) in questions"
           :key="question.id"
@@ -55,12 +85,15 @@
             />
             <label>{{ option.text }} {{ option.correct }}</label>
           </div>
+        </div> -->
+        <div v-if="countQuestion < questions.length - 1" class="test-buttons">
+          <button id="btn-doubt" @click="clickBtn('doubt')">Сомневаюсь</button>
+          <button id="btn-sure" @click="clickBtn('sure')">Уверен</button>
         </div>
-        <div class="test-buttons">
-          <button id="btn-doubt" @click="clickFinishTest('doubt')">
-            Сомневаюсь
+        <div v-else class="test-buttons">
+          <button id="btn-finished" @click="clickFinishTest()">
+            Завершить
           </button>
-          <button id="btn-sure" @click="clickFinishTest('sure')">Уверен</button>
         </div>
       </div>
       <div v-else>Вопросы не найдены</div>
@@ -73,12 +106,13 @@ import Header from "@/components/Header.vue";
 import { API_SERVER } from "@/constants/API_SERVER.constants";
 import { getCookie } from "@/utils/cookie";
 import { ref, watchEffect } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 
 const route = useRoute();
-const router = useRouter();
 const token = getCookie("tkn");
 const questions = ref([]);
+const question = ref({});
+let countQuestion = ref(0);
 const test = ref([]);
 const answer = ref([]);
 let finishedTest = ref(false);
@@ -113,10 +147,11 @@ watchEffect(async () => {
   const { statusCode } = data;
   if (statusCode == 200) {
     questions.value = data.questions;
+    question.value = data.questions[0];
   }
 });
 
-function clickFinishTest(type) {
+function clickFinishTest() {
   if (test.value.length < questions.value.length)
     return alert("Нужно ответить на все вопросы");
 
@@ -135,7 +170,6 @@ function clickFinishTest(type) {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({
-      finish: type,
       answer: answer.value,
     }),
   })
@@ -146,8 +180,14 @@ function clickFinishTest(type) {
     });
 }
 
-function reloadPage() {
-  window.location.reload();
+function clickBtn(type) {
+  if (countQuestion.value < questions.value.length) {
+    if (countQuestion.value + 1 != answer.value.length)
+      return alert("Нужно выбрать ответ");
+    question.value = questions.value[countQuestion.value + 1];
+  } else {
+  }
+  countQuestion.value++;
 }
 
 function addOption(idQuestion, idOption) {
@@ -160,6 +200,10 @@ function addOption(idQuestion, idOption) {
     new Map(test.value.map((obj) => [obj.question, obj])).values()
   );
   answer.value = uniqueArr;
+}
+
+function reloadPage() {
+  window.location.reload();
 }
 </script>
 
@@ -240,7 +284,7 @@ main {
   background-color: yellow;
 }
 
-#btn-restart{
+#btn-restart {
   padding: 15px;
   background-color: "blue";
 }
